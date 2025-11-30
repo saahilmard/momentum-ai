@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -21,10 +21,21 @@ import { useAuthStore } from '../store/authStore'
 
 const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const { isDark, toggleTheme } = useThemeStore()
   const { isAuthenticated, user, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -73,7 +84,15 @@ const Navigation = () => {
   }
 
   return (
-    <nav className="sticky top-0 z-50 glass-strong">
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/95 dark:bg-navy-900/95 backdrop-blur-lg shadow-medium border-b border-navy-100 dark:border-navy-800'
+          : 'bg-white/80 dark:bg-navy-900/80 backdrop-blur-sm'
+      }`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -249,7 +268,7 @@ const Navigation = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   )
 }
 

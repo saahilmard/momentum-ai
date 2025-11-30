@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 // Pages - Public
 import Landing from './pages/Landing'
+import { LandingPage } from './pages/LandingPage'
 import { Login } from './pages/Login'
 
 // Pages - Admin/Overview
@@ -66,7 +67,8 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/old-landing" element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
 
         {/* Student Routes */}
@@ -177,18 +179,22 @@ const AnimatedRoutes = () => {
 
 function App() {
   const { isDark, setTheme } = useThemeStore()
+  const location = window.location.pathname
 
   // Initialize theme on mount
   useEffect(() => {
     setTheme(isDark)
   }, [isDark, setTheme])
 
+  // Check if we're on the landing page
+  const isLandingPage = location === '/'
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="min-h-screen">
-          <Navigation />
-          <main className="container mx-auto px-4 py-8">
+          {!isLandingPage && <Navigation />}
+          <main className={isLandingPage ? '' : 'container mx-auto px-4 py-8'}>
             <AnimatedRoutes />
           </main>
         </div>
