@@ -2,10 +2,12 @@ import { HeroSection } from '../components/HeroSection'
 import { ProductCards } from '../components/ProductCards'
 import { TrustPrivacySection } from '../components/TrustPrivacySection'
 import { TestimonialsSection } from '../components/TestimonialsSection'
+import Navigation from '../components/Navigation'
 
 export const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
+      <Navigation />
       <HeroSection />
       <ProductCards />
       <TrustPrivacySection />

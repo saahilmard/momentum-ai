@@ -1,8 +1,23 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Shield, TrendingUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from './ui/Button'
 
 export const HeroSection = () => {
+  const navigate = useNavigate()
+
+  const handleGetStarted = () => {
+    navigate('/login')
+  }
+
+  const handleSeeHowItWorks = () => {
+    // Scroll to product cards section
+    const productSection = document.getElementById('how-it-works')
+    if (productSection) {
+      productSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-sand-50 overflow-hidden">
       {/* Background decorative elements */}
@@ -64,6 +79,7 @@ export const HeroSection = () => {
             >
               <Button
                 size="lg"
+                onClick={handleGetStarted}
                 className="group bg-navy-900 hover:bg-navy-800 text-white shadow-medium hover:shadow-large transition-all duration-300"
               >
                 Get Started Free
@@ -72,6 +88,7 @@ export const HeroSection = () => {
               <Button
                 size="lg"
                 variant="outline"
+                onClick={handleSeeHowItWorks}
                 className="border-navy-300 text-navy-700 hover:bg-navy-50 shadow-soft"
               >
                 See How It Works

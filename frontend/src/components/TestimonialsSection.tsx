@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Quote, Star } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const testimonials = [
   {
@@ -29,6 +30,18 @@ const testimonials = [
 ]
 
 export const TestimonialsSection = () => {
+  const navigate = useNavigate()
+
+  const handleGetStarted = () => {
+    navigate('/login')
+  }
+
+  const handleScheduleDemo = () => {
+    // Scroll to contact or open contact form
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    alert('Demo scheduling coming soon! For now, please sign up to try Momentum AI.')
+  }
+
   return (
     <section className="relative py-24 bg-white overflow-hidden">
       {/* Background decoration */}
@@ -184,10 +197,16 @@ export const TestimonialsSection = () => {
             Join thousands of students turning academic spirals into comeback stories
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white text-navy-900 font-semibold rounded-xl hover:bg-sand-50 shadow-medium hover:shadow-large transition-all duration-300">
+            <button
+              onClick={handleGetStarted}
+              className="px-8 py-4 bg-white text-navy-900 font-semibold rounded-xl hover:bg-sand-50 shadow-medium hover:shadow-large transition-all duration-300"
+            >
               Get Started Free
             </button>
-            <button className="px-8 py-4 bg-navy-700 text-white font-semibold rounded-xl hover:bg-navy-600 border border-navy-600 transition-all duration-300">
+            <button
+              onClick={handleScheduleDemo}
+              className="px-8 py-4 bg-navy-700 text-white font-semibold rounded-xl hover:bg-navy-600 border border-navy-600 transition-all duration-300"
+            >
               Schedule a Demo
             </button>
           </div>

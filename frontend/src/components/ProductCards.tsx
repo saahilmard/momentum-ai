@@ -67,7 +67,7 @@ const cardVariants = {
 
 export const ProductCards = () => {
   return (
-    <section className="relative py-24 bg-white overflow-hidden">
+    <section id="how-it-works" className="relative py-24 bg-white overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.05),transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(20,184,166,0.05),transparent_50%)]" />
