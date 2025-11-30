@@ -55,8 +55,20 @@ module.exports = {
           800: '#292524',
           900: '#1c1917',
         },
+        // Primary color scale for compatibility
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        },
         // Semantic colors
-        primary: '#0f172a',  // Deep navy
         accent: '#3b82f6',   // Soft blue
         support: '#f5f5f4',  // Warm sand
       },

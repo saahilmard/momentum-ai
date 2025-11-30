@@ -64,7 +64,7 @@
 
   /* Gradient text */
   .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent;
   }
 
   /* Animated gradient background */
@@ -92,9 +92,9 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary-400 dark:bg-primary-600 rounded-full;
+  @apply bg-blue-400 dark:bg-blue-600 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-500 dark:bg-primary-500;
+  @apply bg-blue-500 dark:bg-blue-500;
 }
