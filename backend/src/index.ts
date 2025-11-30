@@ -38,7 +38,22 @@ app.post('/api/study-guide/generate', async (req, res) => {
   }
 })
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Momentum AI Backend running on port ${PORT}`)
   console.log(`📚 Study guide generation endpoint: http://localhost:${PORT}/api/study-guide/generate`)
+  console.log(`✅ Server is ready to accept requests`)
+})
+
+// Keep the process alive
+server.on('error', (error) => {
+  console.error('Server error:', error)
+  process.exit(1)
+})
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server')
+  server.close(() => {
+    console.log('HTTP server closed')
+  })
 })
