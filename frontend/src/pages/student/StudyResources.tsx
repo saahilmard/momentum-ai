@@ -12,13 +12,17 @@ import {
   Filter,
   TrendingUp,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Zap,
+  AlertCircle
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { GlassCard } from '../../components/ui/GlassCard'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
+import { StudyGuideModal } from '../../components/StudyGuideModal'
 import type { StudyGuide, SupportMaterial } from '../../types/user'
+import { generateStudyGuide } from '../../services/studyGuideGenerator'
 
 export const StudyResources = () => {
   const { user } = useAuthStore()
@@ -26,9 +30,43 @@ export const StudyResources = () => {
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [studyGuides, setStudyGuides] = useState<StudyGuide[]>([])
+  const [generationError, setGenerationError] = useState<string | null>(null)
+  const [selectedGuide, setSelectedGuide] = useState<StudyGuide | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Mock AI-generated study guides based on student's weak areas and learning style
-  const studyGuides: StudyGuide[] = [
+  // Load initial study guides on mount
+  useEffect(() => {
+    if (studentInfo && studyGuides.length === 0) {
+      loadInitialGuides()
+    }
+  }, [studentInfo])
+
+  const loadInitialGuides = async () => {
+    if (!studentInfo) return
+
+    // Generate guides for each weak area
+    const guides: StudyGuide[] = []
+    for (const weakArea of studentInfo.weakAreas.slice(0, 2)) {
+      try {
+        const guide = await generateStudyGuide({
+          subject: 'Mathematics', // Could be derived from weak area
+          weakArea,
+          grade: studentInfo.grade,
+          learningStyle: studentInfo.learningStyle,
+          difficulty: 'intermediate',
+          studentName: user?.firstName || 'Student'
+        })
+        guides.push(guide)
+      } catch (error) {
+        console.error(`Failed to generate guide for ${weakArea}:`, error)
+      }
+    }
+    setStudyGuides(guides)
+  }
+
+  // Original mock guides kept for backwards compatibility
+  const mockStudyGuides: StudyGuide[] = [
     {
       id: 'sg-001',
       title: 'Differential Equations Fundamentals',
@@ -189,10 +227,32 @@ export const StudyResources = () => {
   ]
 
   const generateNewGuide = async () => {
+    if (!studentInfo) return
+
     setIsGenerating(true)
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsGenerating(false)
+    setGenerationError(null)
+
+    try {
+      // Let user select what to generate
+      const weakArea = studentInfo.weakAreas[0] || 'General Study Skills'
+
+      const newGuide = await generateStudyGuide({
+        subject: 'Mathematics',
+        weakArea,
+        grade: studentInfo.grade,
+        learningStyle: studentInfo.learningStyle,
+        difficulty: selectedDifficulty === 'all' ? 'intermediate' : selectedDifficulty as any,
+        studentName: user?.firstName || 'Student'
+      })
+
+      setStudyGuides(prev => [newGuide, ...prev])
+      setGenerationError(null)
+    } catch (error) {
+      console.error('Failed to generate study guide:', error)
+      setGenerationError('Failed to generate study guide. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const filteredGuides = studyGuides.filter(guide => {
@@ -249,22 +309,39 @@ export const StudyResources = () => {
             <div className="p-3 rounded-lg bg-purple-500/10">
               <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Generate Custom Study Guide</h3>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
+                Generate Custom Study Guide
+                <Badge variant="default" className="text-xs">Georgia Standards Aligned</Badge>
+              </h3>
               <p className="text-slate-600 dark:text-slate-400 mb-4">
-                Our AI analyzes your survey responses, weak areas ({studentInfo?.weakAreas.join(', ')}),
-                and {studentInfo?.learningStyle} learning style to create personalized materials.
+                Our RAG-based AI retrieves relevant <strong>Georgia Standards of Excellence</strong> for your grade ({studentInfo?.grade}th),
+                analyzes your weak areas ({studentInfo?.weakAreas.join(', ')}),
+                and adapts content to your {studentInfo?.learningStyle} learning style.
               </p>
-              <Button onClick={generateNewGuide} disabled={isGenerating}>
-                {isGenerating ? (
-                  <>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                      className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"
-                    />
-                    Generating with AI...
-                  </>
+
+              {generationError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 p-3 mb-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm">{generationError}</span>
+                </motion.div>
+              )}
+
+              <div className="flex gap-3">
+                <Button onClick={generateNewGuide} disabled={isGenerating}>
+                  {isGenerating ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"
+                      />
+                      Generating from GA Standards...
+                    </>
                 ) : (
                   <>
                     <Brain className="w-4 h-4 mr-2" />
@@ -272,6 +349,19 @@ export const StudyResources = () => {
                   </>
                 )}
               </Button>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <Zap className="w-3 h-3 inline mr-1" />
+                Powered by RAG (Retrieval-Augmented Generation)
+              </div>
+            </div>
+
+              {/* Generation Info */}
+              {!isGenerating && studyGuides.length > 0 && (
+                <div className="ml-4 text-xs text-slate-500 dark:text-slate-500">
+                  <CheckCircle className="w-3 h-3 inline mr-1 text-green-500" />
+                  {studyGuides.length} guide{studyGuides.length !== 1 ? 's' : ''} generated
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -377,7 +467,10 @@ export const StudyResources = () => {
                   <Button
                     variant="primary"
                     className="flex-1"
-                    onClick={() => window.open(`/student/guide/${guide.id}`, '_blank')}
+                    onClick={() => {
+                      setSelectedGuide(guide)
+                      setIsModalOpen(true)
+                    }}
                   >
                     <BookOpen className="w-4 h-4 mr-2" />
                     Open Guide
@@ -441,6 +534,16 @@ export const StudyResources = () => {
           ))}
         </div>
       </div>
+
+      {/* Study Guide Detail Modal */}
+      <StudyGuideModal
+        guide={selectedGuide}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedGuide(null)
+        }}
+      />
     </div>
   )
 }
