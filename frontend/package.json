@@ -1,6 +1,7 @@
 {
   "name": "momentum-ai-frontend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Momentum AI - Academic Recovery Platform Frontend",
   "private": true,
   "scripts": {
