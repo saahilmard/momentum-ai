@@ -139,28 +139,64 @@ Remember: Output ONLY the JSON object, no additional text before or after.`
       throw new Error('Invalid guide structure returned from AI')
     }
 
+    // Fix malformed LaTeX (add missing backslashes)
+    const fixLatex = (text: string): string => {
+      if (!text) return text
+      return text
+        .replace(/([^\\])frac{/g, '$1\\frac{')  // Fix \frac
+        .replace(/^frac{/g, '\\frac{')
+        .replace(/([^\\])int /g, '$1\\int ')    // Fix \int
+        .replace(/^int /g, '\\int ')
+        .replace(/([^\\])lim_/g, '$1\\lim_')    // Fix \lim
+        .replace(/^lim_/g, '\\lim_')
+        .replace(/([^\\])sqrt{/g, '$1\\sqrt{')  // Fix \sqrt
+        .replace(/^sqrt{/g, '\\sqrt{')
+        .replace(/([^\\])sum_/g, '$1\\sum_')    // Fix \sum
+        .replace(/^sum_/g, '\\sum_')
+        .replace(/([^\\])prod_/g, '$1\\prod_')  // Fix \prod
+        .replace(/^prod_/g, '\\prod_')
+    }
+
+    // Apply LaTeX fixes to all text content
+    const fixObject = (obj: any): any => {
+      if (typeof obj === 'string') {
+        return fixLatex(obj)
+      } else if (Array.isArray(obj)) {
+        return obj.map(fixObject)
+      } else if (obj && typeof obj === 'object') {
+        const fixed: any = {}
+        for (const key in obj) {
+          fixed[key] = fixObject(obj[key])
+        }
+        return fixed
+      }
+      return obj
+    }
+
+    const fixedGuideData = fixObject(guideData)
+
     return {
       id: `guide-${Date.now()}`,
-      title: guideData.title,
+      title: fixedGuideData.title,
       subject: params.subject,
       topic: params.topic,
       difficulty: params.difficulty,
       content: {
-        overview: guideData.overview,
-        keyPoints: guideData.keyPoints,
-        examples: guideData.examples.map((ex: any) => ({
+        overview: fixedGuideData.overview,
+        keyPoints: fixedGuideData.keyPoints,
+        examples: fixedGuideData.examples.map((ex: any) => ({
           title: ex.title,
           description: ex.description,
           solution: ex.solution
         })),
-        practiceProblems: guideData.practiceProblems.map((prob: any, idx: number) => ({
+        practiceProblems: fixedGuideData.practiceProblems.map((prob: any, idx: number) => ({
           id: `prob-${Date.now()}-${idx}`,
           question: prob.question,
           difficulty: prob.difficulty || 'medium',
           hint: prob.hint,
           answer: prob.answer
         })),
-        resources: guideData.resources || []
+        resources: fixedGuideData.resources || []
       },
       generatedAt: new Date().toISOString(),
       basedOnSurvey: 'latest'

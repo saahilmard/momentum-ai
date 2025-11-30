@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CheckCircle, BookOpen, Target, ExternalLink, Printer, Eye, EyeOff, Lightbulb, Sparkles } from 'lucide-react'
 import type { StudyGuide } from '../types/user'
@@ -14,13 +14,13 @@ interface StudyGuideModalProps {
 
 type TabType = 'overview' | 'examples' | 'practice' | 'resources'
 
-export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps) => {
+export const StudyGuideModal = memo(({ guide, isOpen, onClose }: StudyGuideModalProps) => {
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<TabType>('overview')
 
   if (!guide) return null
 
-  const toggleAnswer = (problemId: string) => {
+  const toggleAnswer = useCallback((problemId: string) => {
     setRevealedAnswers(prev => {
       const next = new Set(prev)
       if (next.has(problemId)) {
@@ -30,31 +30,31 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
       }
       return next
     })
-  }
+  }, [])
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = useCallback(() => {
     alert('PDF download feature coming soon! For now, use Print to save as PDF.')
-  }
+  }, [])
 
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     window.print()
-  }
+  }, [])
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case 'beginner': case 'easy': return 'green'
       case 'intermediate': case 'medium': return 'yellow'
       case 'advanced': case 'hard': return 'red'
       default: return 'gray'
     }
-  }
+  }, [])
 
-  const tabs: { id: TabType; label: string; icon: any }[] = [
+  const tabs = useMemo<{ id: TabType; label: string; icon: any }[]>(() => [
     { id: 'overview', label: 'Overview', icon: BookOpen },
     { id: 'examples', label: 'Examples', icon: Lightbulb },
     { id: 'practice', label: 'Practice', icon: Target },
     { id: 'resources', label: 'Resources', icon: ExternalLink }
-  ]
+  ], [])
 
   return (
     <AnimatePresence>
@@ -428,4 +428,4 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
       )}
     </AnimatePresence>
   )
-}
+})

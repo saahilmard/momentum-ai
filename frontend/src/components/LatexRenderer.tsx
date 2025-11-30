@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 
@@ -8,7 +8,7 @@ interface LatexRendererProps {
   display?: boolean
 }
 
-export const LatexRenderer = ({ content, className = '', display = false }: LatexRendererProps) => {
+export const LatexRenderer = memo(({ content, className = '', display = false }: LatexRendererProps) => {
   const containerRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -43,14 +43,14 @@ export const LatexRenderer = ({ content, className = '', display = false }: Late
   }, [content, display])
 
   return <span ref={containerRef} className={className} />
-}
+})
 
 interface LatexBlockProps {
   latex: string
   className?: string
 }
 
-export const LatexBlock = ({ latex, className = '' }: LatexBlockProps) => {
+export const LatexBlock = memo(({ latex, className = '' }: LatexBlockProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -70,4 +70,4 @@ export const LatexBlock = ({ latex, className = '' }: LatexBlockProps) => {
   }, [latex])
 
   return <div ref={containerRef} className={`my-4 overflow-x-auto ${className}`} />
-}
+})
