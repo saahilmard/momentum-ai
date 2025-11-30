@@ -30,7 +30,7 @@ export async function generateStudyGuide(params: GenerationParams): Promise<Stud
     )
 
     // Step 2: Call backend API for OpenAI generation
-    const response = await fetch('http://localhost:5000/api/study-guide/generate', {
+    const response = await fetch('http://localhost:5001/api/study-guide/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
