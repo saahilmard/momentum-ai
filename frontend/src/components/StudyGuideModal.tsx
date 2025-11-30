@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, CheckCircle, BookOpen, Target, ExternalLink, Download } from 'lucide-react'
+import { X, CheckCircle, BookOpen, Target, ExternalLink, Download, Printer } from 'lucide-react'
 import type { StudyGuide } from '../types/user'
 import { Button } from './ui/Button'
 import { Badge } from './ui/Badge'
 import { GlassCard } from './ui/GlassCard'
+import { LatexRenderer } from './LatexRenderer'
 
 interface StudyGuideModalProps {
   guide: StudyGuide | null
@@ -13,6 +14,15 @@ interface StudyGuideModalProps {
 
 export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps) => {
   if (!guide) return null
+
+  const handleDownloadPDF = () => {
+    // TODO: Implement PDF generation
+    alert('PDF download feature coming soon! For now, use Print to save as PDF.')
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -112,17 +122,17 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
                           className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700"
                         >
                           <h4 className="font-semibold mb-2">{example.title}</h4>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                            {example.description}
-                          </p>
+                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                            <LatexRenderer content={example.description} />
+                          </div>
                           {example.solution && (
                             <div className="mt-3 p-3 rounded bg-primary-50 dark:bg-primary-900/20">
                               <p className="text-xs font-semibold text-primary-700 dark:text-primary-400 mb-1">
                                 Solution:
                               </p>
-                              <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">
-                                {example.solution}
-                              </p>
+                              <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                                <LatexRenderer content={example.solution} />
+                              </div>
                             </div>
                           )}
                         </div>
@@ -153,17 +163,17 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
                               {problem.difficulty}
                             </Badge>
                           </div>
-                          <p className="text-slate-700 dark:text-slate-300 mb-2">
-                            {problem.question}
-                          </p>
+                          <div className="text-slate-700 dark:text-slate-300 mb-2">
+                            <LatexRenderer content={problem.question} />
+                          </div>
                           {problem.hint && (
                             <details className="mt-2">
                               <summary className="cursor-pointer text-sm text-primary-600 dark:text-primary-400 hover:underline">
                                 Show hint
                               </summary>
-                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 ml-4">
-                                💡 {problem.hint}
-                              </p>
+                              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1 ml-4">
+                                <LatexRenderer content={`💡 ${problem.hint}`} />
+                              </div>
                             </details>
                           )}
                         </div>
@@ -218,7 +228,11 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
 
               {/* Footer Actions */}
               <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" onClick={handlePrint}>
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
+                <Button variant="outline" onClick={handleDownloadPDF}>
                   <Download className="w-4 h-4 mr-2" />
                   Download PDF
                 </Button>

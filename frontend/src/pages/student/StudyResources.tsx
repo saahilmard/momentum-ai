@@ -21,7 +21,8 @@ import { GlassCard } from '../../components/ui/GlassCard'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { StudyGuideModal } from '../../components/StudyGuideModal'
-import type { StudyGuide, SupportMaterial } from '../../types/user'
+import { CourseSelectionModal } from '../../components/CourseSelectionModal'
+import type { StudyGuide, SupportMaterial, Course } from '../../types/user'
 import { generateStudyGuide } from '../../services/studyGuideGenerator'
 
 export const StudyResources = () => {
@@ -34,6 +35,7 @@ export const StudyResources = () => {
   const [generationError, setGenerationError] = useState<string | null>(null)
   const [selectedGuide, setSelectedGuide] = useState<StudyGuide | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false)
 
   // Load initial study guides on mount
   useEffect(() => {
@@ -226,23 +228,33 @@ export const StudyResources = () => {
     }
   ]
 
-  const generateNewGuide = async () => {
+  const handleCourseGenerate = async (course: Course, topic: string, difficulty: string) => {
     if (!studentInfo) return
 
     setIsGenerating(true)
     setGenerationError(null)
+    setIsCourseModalOpen(false)
 
     try {
-      // Let user select what to generate
-      const weakArea = studentInfo.weakAreas[0] || 'General Study Skills'
+      // Derive subject from course name
+      let subject = 'Mathematics'
+      if (course.name.toLowerCase().includes('math') || course.name.toLowerCase().includes('calc') || course.name.toLowerCase().includes('algebra')) {
+        subject = 'Mathematics'
+      } else if (course.name.toLowerCase().includes('phys')) {
+        subject = 'Physics'
+      } else if (course.name.toLowerCase().includes('eng') || course.name.toLowerCase().includes('lit')) {
+        subject = 'English'
+      }
 
       const newGuide = await generateStudyGuide({
-        subject: 'Mathematics',
-        weakArea,
+        subject,
+        weakArea: topic,
         grade: studentInfo.grade,
         learningStyle: studentInfo.learningStyle,
-        difficulty: selectedDifficulty === 'all' ? 'intermediate' : selectedDifficulty as any,
-        studentName: user?.firstName || 'Student'
+        difficulty: difficulty as any,
+        studentName: user?.firstName || 'Student',
+        courseCode: course.code,
+        courseName: course.name
       })
 
       setStudyGuides(prev => [newGuide, ...prev])
@@ -253,6 +265,69 @@ export const StudyResources = () => {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  const handleDownloadGuide = (guide: StudyGuide) => {
+    // Create text content for download
+    const content = `
+${guide.title}
+${'='.repeat(guide.title.length)}
+
+Subject: ${guide.subject}
+Topic: ${guide.topic}
+Difficulty: ${guide.difficulty}
+Generated: ${new Date(guide.generatedAt).toLocaleDateString()}
+
+OVERVIEW
+${guide.content.overview}
+
+KEY POINTS
+${guide.content.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+EXAMPLES
+${guide.content.examples.map((ex, i) => `
+Example ${i + 1}: ${ex.title}
+${ex.description}
+Solution: ${ex.solution}
+`).join('\n')}
+
+PRACTICE PROBLEMS
+${guide.content.practiceProblems.map((prob, i) => `
+Problem ${i + 1} (${prob.difficulty})
+${prob.question}
+Hint: ${prob.hint}
+`).join('\n')}
+
+RESOURCES
+${guide.content.resources.map((res, i) => `
+${i + 1}. ${res.title} (${res.type})
+   ${res.description}
+   ${res.url}
+`).join('\n')}
+    `.trim()
+
+    // Create blob and download
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${guide.title.replace(/[^a-z0-9]/gi, '_')}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleAccessResource = (material: SupportMaterial) => {
+    // Generate a demo URL based on material type
+    const urls: Record<string, string> = {
+      practice_test: 'https://www.khanacademy.org/test',
+      concept_map: 'https://www.mindmeister.com/',
+      tutorial: 'https://www.khanacademy.org/'
+    }
+
+    const url = urls[material.type] || 'https://www.khanacademy.org/'
+    window.open(url, '_blank')
   }
 
   const filteredGuides = studyGuides.filter(guide => {
@@ -332,7 +407,7 @@ export const StudyResources = () => {
               )}
 
               <div className="flex gap-3">
-                <Button onClick={generateNewGuide} disabled={isGenerating}>
+                <Button onClick={() => setIsCourseModalOpen(true)} disabled={isGenerating}>
                   {isGenerating ? (
                     <>
                       <motion.div
@@ -475,7 +550,7 @@ export const StudyResources = () => {
                     <BookOpen className="w-4 h-4 mr-2" />
                     Open Guide
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => handleDownloadGuide(guide)}>
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
@@ -525,7 +600,7 @@ export const StudyResources = () => {
                     {material.difficulty}
                   </Badge>
                 </div>
-                <Button size="sm" variant="outline" className="w-full">
+                <Button size="sm" variant="outline" className="w-full" onClick={() => handleAccessResource(material)}>
                   <ExternalLink className="w-3 h-3 mr-2" />
                   Access Resource
                 </Button>
@@ -543,6 +618,15 @@ export const StudyResources = () => {
           setIsModalOpen(false)
           setSelectedGuide(null)
         }}
+      />
+
+      {/* Course Selection Modal */}
+      <CourseSelectionModal
+        courses={studentInfo?.currentCourses || []}
+        isOpen={isCourseModalOpen}
+        onClose={() => setIsCourseModalOpen(false)}
+        onGenerate={handleCourseGenerate}
+        isGenerating={isGenerating}
       />
     </div>
   )

@@ -13,6 +13,8 @@ interface GenerationParams {
   learningStyle: 'visual' | 'auditory' | 'kinesthetic' | 'reading'
   difficulty: 'beginner' | 'intermediate' | 'advanced'
   studentName: string
+  courseCode?: string  // e.g., "MATH-101"
+  courseName?: string  // e.g., "Calculus I"
 }
 
 /**
@@ -59,7 +61,30 @@ export async function generateStudyGuide(params: GenerationParams): Promise<Stud
  * Generate title based on standard and learning style
  */
 function generateTitle(standard: Standard, weakArea: string): string {
-  return `${standard.domain}: ${weakArea} - Georgia Standards Aligned`
+  return `${standard.domain}: ${weakArea}`
+}
+
+/**
+ * Format mathematical expressions with LaTeX
+ */
+function formatWithLatex(text: string): string {
+  // Replace common math expressions with LaTeX
+  return text
+    .replace(/dy\/dx/g, '$\\frac{dy}{dx}$')
+    .replace(/d\/dx\[([^\]]+)\]/g, '$\\frac{d}{dx}[$1]$')
+    .replace(/∫([^d]+)dx/g, '$\\int $1 \\, dx$')
+    .replace(/∫₀²/g, '$\\int_0^2$')
+    .replace(/∫₀¹/g, '$\\int_0^1$')
+    .replace(/lim\(x→(\d+)\)/g, '$\\lim_{x \\to $1}$')
+    .replace(/x²/g, '$x^2$')
+    .replace(/x³/g, '$x^3$')
+    .replace(/xⁿ/g, '$x^n$')
+    .replace(/nxⁿ⁻¹/g, '$nx^{n-1}$')
+    .replace(/e\^/g, '$e^')
+    .replace(/F = ma/g, '$F = ma$')
+    .replace(/KE₁ \+ PE₁ = KE₂ \+ PE₂/g, '$KE_1 + PE_1 = KE_2 + PE_2$')
+    .replace(/p = mv/g, '$p = mv$')
+    .replace(/m₁v₁ \+ m₂v₂ = m₁v₁' \+ m₂v₂'/g, '$m_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'$')
 }
 
 /**
@@ -155,7 +180,7 @@ function generateKeyPoints(standard: Standard, prerequisites: Standard[]): strin
 function generateExamples(standard: Standard, learningStyle: string): Example[] {
   return standard.examples.slice(0, 3).map((example, index) => ({
     title: `Example ${index + 1}`,
-    description: example,
+    description: formatWithLatex(example),
     solution: generateSolution(example, standard, learningStyle)
   }))
 }
