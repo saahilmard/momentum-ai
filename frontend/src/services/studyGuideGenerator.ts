@@ -18,10 +18,53 @@ interface GenerationParams {
 }
 
 /**
- * Main generation function
+ * Main generation function - now uses OpenAI API
  */
 export async function generateStudyGuide(params: GenerationParams): Promise<StudyGuide> {
-  // Step 1: Retrieve relevant Georgia standards (RAG retrieval phase)
+  try {
+    // Step 1: Retrieve relevant Georgia standards (RAG retrieval phase)
+    const standards = retrieveRelevantStandards(
+      params.grade,
+      params.subject,
+      [params.weakArea]
+    )
+
+    // Step 2: Call backend API for OpenAI generation
+    const response = await fetch('http://localhost:5000/api/study-guide/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        subject: params.subject,
+        topic: params.weakArea,
+        grade: params.grade,
+        learningStyle: params.learningStyle,
+        difficulty: params.difficulty,
+        studentName: params.studentName,
+        courseCode: params.courseCode,
+        courseName: params.courseName,
+        georgiaStandards: standards
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to generate study guide from API')
+    }
+
+    const guide = await response.json()
+    return guide
+  } catch (error) {
+    console.error('Study guide generation error:', error)
+    // Fallback to template-based generation
+    return generateTemplateFallback(params)
+  }
+}
+
+/**
+ * Template-based fallback if OpenAI fails
+ */
+async function generateTemplateFallback(params: GenerationParams): Promise<StudyGuide> {
   const standards = retrieveRelevantStandards(
     params.grade,
     params.subject,
@@ -29,20 +72,13 @@ export async function generateStudyGuide(params: GenerationParams): Promise<Stud
   )
 
   if (standards.length === 0) {
-    // Fallback if no exact match
     return generateFallbackGuide(params)
   }
 
-  // Step 2: Select primary standard
   const primaryStandard = standards[0]
-
-  // Step 3: Get prerequisite chain
   const prerequisites = getPrerequisiteChain(primaryStandard.id)
-
-  // Step 4: Generate content based on learning style (RAG generation phase)
   const content = await generateContent(primaryStandard, prerequisites, params)
 
-  // Step 5: Assemble study guide
   const guide: StudyGuide = {
     id: `guide-${Date.now()}`,
     title: generateTitle(primaryStandard, params.weakArea),

@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, CheckCircle, BookOpen, Target, ExternalLink, Download, Printer } from 'lucide-react'
+import { X, CheckCircle, BookOpen, Target, ExternalLink, Printer, Eye, EyeOff } from 'lucide-react'
 import type { StudyGuide } from '../types/user'
 import { Button } from './ui/Button'
 import { Badge } from './ui/Badge'
-import { GlassCard } from './ui/GlassCard'
 import { LatexRenderer } from './LatexRenderer'
 
 interface StudyGuideModalProps {
@@ -13,10 +13,23 @@ interface StudyGuideModalProps {
 }
 
 export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps) => {
+  const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set())
+
   if (!guide) return null
 
+  const toggleAnswer = (problemId: string) => {
+    setRevealedAnswers(prev => {
+      const next = new Set(prev)
+      if (next.has(problemId)) {
+        next.delete(problemId)
+      } else {
+        next.add(problemId)
+      }
+      return next
+    })
+  }
+
   const handleDownloadPDF = () => {
-    // TODO: Implement PDF generation
     alert('PDF download feature coming soon! For now, use Print to save as PDF.')
   }
 
@@ -26,9 +39,9 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'green'
-      case 'intermediate': return 'yellow'
-      case 'advanced': return 'red'
+      case 'beginner': case 'easy': return 'green'
+      case 'intermediate': case 'medium': return 'yellow'
+      case 'advanced': case 'hard': return 'red'
       default: return 'gray'
     }
   }
@@ -53,7 +66,7 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden"
           >
-            <GlassCard className="relative">
+            <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 overflow-hidden">
               {/* Header */}
               <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex-1">
@@ -149,35 +162,82 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
                       Practice Problems
                     </h3>
                     <div className="space-y-3">
-                      {guide.content.practiceProblems.map((problem, index) => (
-                        <div
-                          key={problem.id}
-                          className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold">Problem {index + 1}</h4>
-                            <Badge variant={
-                              problem.difficulty === 'easy' ? 'green' :
-                              problem.difficulty === 'medium' ? 'yellow' : 'red'
-                            } className="text-xs">
-                              {problem.difficulty}
-                            </Badge>
-                          </div>
-                          <div className="text-slate-700 dark:text-slate-300 mb-2">
-                            <LatexRenderer content={problem.question} />
-                          </div>
-                          {problem.hint && (
-                            <details className="mt-2">
-                              <summary className="cursor-pointer text-sm text-primary-600 dark:text-primary-400 hover:underline">
-                                Show hint
-                              </summary>
-                              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1 ml-4">
-                                <LatexRenderer content={`💡 ${problem.hint}`} />
+                      {guide.content.practiceProblems.map((problem, index) => {
+                        const isAnswerRevealed = revealedAnswers.has(problem.id)
+                        return (
+                          <div
+                            key={problem.id}
+                            className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-semibold">Problem {index + 1}</h4>
+                              <Badge variant={getDifficultyColor(problem.difficulty) as any} className="text-xs">
+                                {problem.difficulty}
+                              </Badge>
+                            </div>
+                            <div className="text-slate-700 dark:text-slate-300 mb-3">
+                              <LatexRenderer content={problem.question} />
+                            </div>
+
+                            {/* Hint */}
+                            {problem.hint && (
+                              <details className="mt-2 mb-3">
+                                <summary className="cursor-pointer text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1">
+                                  💡 Show hint
+                                </summary>
+                                <div className="text-sm text-slate-600 dark:text-slate-400 mt-2 ml-4 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                  <LatexRenderer content={problem.hint} />
+                                </div>
+                              </details>
+                            )}
+
+                            {/* Answer Reveal Button */}
+                            {problem.answer && (
+                              <div className="mt-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => toggleAnswer(problem.id)}
+                                  className="w-full"
+                                >
+                                  {isAnswerRevealed ? (
+                                    <>
+                                      <EyeOff className="w-4 h-4 mr-2" />
+                                      Hide Answer
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      Show Answer
+                                    </>
+                                  )}
+                                </Button>
+
+                                {/* Answer Content */}
+                                <AnimatePresence>
+                                  {isAnswerRevealed && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="mt-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                                    >
+                                      <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-1">
+                                        <CheckCircle className="w-4 h-4" />
+                                        Solution:
+                                      </p>
+                                      <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                                        <LatexRenderer content={problem.answer} />
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
-                            </details>
-                          )}
-                        </div>
-                      ))}
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </section>
                 )}
@@ -230,17 +290,13 @@ export const StudyGuideModal = ({ guide, isOpen, onClose }: StudyGuideModalProps
               <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <Button variant="outline" onClick={handlePrint}>
                   <Printer className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-                <Button variant="outline" onClick={handleDownloadPDF}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
+                  Print / Save as PDF
                 </Button>
                 <Button variant="primary" onClick={onClose} className="flex-1">
                   Close
                 </Button>
               </div>
-            </GlassCard>
+            </div>
           </motion.div>
         </div>
       )}
