@@ -22,6 +22,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { StudyGuideModal } from '../../components/StudyGuideModal'
 import { CourseSelectionModal } from '../../components/CourseSelectionModal'
+import { ProgressBar, STUDY_GUIDE_STEPS } from '../../components/ProgressBar'
 import type { StudyGuide, SupportMaterial, Course } from '../../types/user'
 import { generateStudyGuide } from '../../services/studyGuideGenerator'
 
@@ -31,6 +32,8 @@ export const StudyResources = () => {
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
   const [studyGuides, setStudyGuides] = useState<StudyGuide[]>([])
   const [generationError, setGenerationError] = useState<string | null>(null)
   const [selectedGuide, setSelectedGuide] = useState<StudyGuide | null>(null)
@@ -233,9 +236,19 @@ export const StudyResources = () => {
 
     setIsGenerating(true)
     setGenerationError(null)
+    setShowSuccess(false)
+    setCurrentStep(0)
     setIsCourseModalOpen(false)
 
     try {
+      // Step 1: Analyzing needs (2 seconds)
+      setCurrentStep(0)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Step 2: Retrieving Georgia Standards (3 seconds)
+      setCurrentStep(1)
+      await new Promise(resolve => setTimeout(resolve, 3000))
+
       // Derive subject from course name
       let subject = 'Mathematics'
       if (course.name.toLowerCase().includes('math') || course.name.toLowerCase().includes('calc') || course.name.toLowerCase().includes('algebra')) {
@@ -245,6 +258,10 @@ export const StudyResources = () => {
       } else if (course.name.toLowerCase().includes('eng') || course.name.toLowerCase().includes('lit')) {
         subject = 'English'
       }
+
+      // Step 3: Generating personalized content (4 seconds)
+      setCurrentStep(2)
+      await new Promise(resolve => setTimeout(resolve, 2000))
 
       const newGuide = await generateStudyGuide({
         subject,
@@ -257,14 +274,33 @@ export const StudyResources = () => {
         courseName: course.name
       })
 
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Step 4: Finalizing (2 seconds)
+      setCurrentStep(3)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Show success
+      setShowSuccess(true)
       setStudyGuides(prev => [newGuide, ...prev])
       setGenerationError(null)
+
+      // Reset after showing success
+      setTimeout(() => {
+        setShowSuccess(false)
+        setIsGenerating(false)
+      }, 2000)
     } catch (error) {
       console.error('Failed to generate study guide:', error)
       setGenerationError('Failed to generate study guide. Please try again.')
-    } finally {
       setIsGenerating(false)
+      setShowSuccess(false)
     }
+  }
+
+  const handleRetry = () => {
+    setGenerationError(null)
+    setIsCourseModalOpen(true)
   }
 
   const handleDownloadGuide = (guide: StudyGuide) => {
@@ -395,44 +431,85 @@ ${i + 1}. ${res.title} (${res.type})
                 and adapts content to your {studentInfo?.learningStyle} learning style.
               </p>
 
+              {/* Progress Bar - shown during generation */}
+              {isGenerating && !generationError && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="mb-6"
+                >
+                  <ProgressBar steps={STUDY_GUIDE_STEPS} currentStep={currentStep} />
+                </motion.div>
+              )}
+
+              {/* Success Animation */}
+              {showSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex items-center gap-3 p-4 mb-4 rounded-lg bg-green-500/10 border border-green-500/20"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+                  >
+                    <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </motion.div>
+                  <div>
+                    <h4 className="font-semibold text-green-600 dark:text-green-400">
+                      Study Guide Generated Successfully!
+                    </h4>
+                    <p className="text-sm text-green-600/80 dark:text-green-400/80">
+                      Your personalized study guide is ready to view.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Error Message with Retry */}
               {generationError && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 p-3 mb-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400"
+                  className="mb-4"
                 >
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm">{generationError}</span>
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium mb-2">{generationError}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleRetry}
+                        className="border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
-              <div className="flex gap-3">
-                <Button onClick={() => setIsCourseModalOpen(true)} disabled={isGenerating}>
-                  {isGenerating ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"
-                      />
-                      Generating from GA Standards...
-                    </>
-                ) : (
-                  <>
+              {/* Action Button */}
+              {!isGenerating && !showSuccess && (
+                <div>
+                  <Button onClick={() => setIsCourseModalOpen(true)}>
                     <Brain className="w-4 h-4 mr-2" />
                     Generate New Study Guide
-                  </>
-                )}
-              </Button>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                <Zap className="w-3 h-3 inline mr-1" />
-                Powered by RAG (Retrieval-Augmented Generation)
-              </div>
-            </div>
+                  </Button>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    <Zap className="w-3 h-3 inline mr-1" />
+                    Powered by RAG (Retrieval-Augmented Generation)
+                  </div>
+                </div>
+              )}
 
               {/* Generation Info */}
               {!isGenerating && studyGuides.length > 0 && (
-                <div className="ml-4 text-xs text-slate-500 dark:text-slate-500">
+                <div className="mt-3 text-xs text-slate-500 dark:text-slate-500">
                   <CheckCircle className="w-3 h-3 inline mr-1 text-green-500" />
                   {studyGuides.length} guide{studyGuides.length !== 1 ? 's' : ''} generated
                 </div>

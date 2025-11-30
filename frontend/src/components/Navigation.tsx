@@ -78,8 +78,8 @@ const Navigation = () => {
   const navItems = getNavItems()
   const isActive = (path: string) => location.pathname === path
 
-  // Don't show navigation on login page
-  if (location.pathname === '/login') {
+  // Don't show navigation on login or landing pages
+  if (location.pathname === '/login' || location.pathname === '/landing') {
     return null
   }
 

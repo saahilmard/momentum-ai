@@ -63,11 +63,25 @@ const AnimatedRoutes = () => {
   const location = useLocation()
   const { isAuthenticated, user } = useAuthStore()
 
+  // Root redirect component
+  const RootRedirect = () => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />
+    }
+
+    // Redirect to role-based dashboard
+    const dashboardPath = user?.role === 'student' ? '/student/dashboard' : '/teacher/dashboard'
+    return <Navigate to={dashboardPath} replace />
+  }
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Root Route - Redirect based on auth status */}
+        <Route path="/" element={<RootRedirect />} />
+
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingPage />} />
         <Route path="/old-landing" element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
 
@@ -179,27 +193,37 @@ const AnimatedRoutes = () => {
 
 function App() {
   const { isDark, setTheme } = useThemeStore()
-  const location = window.location.pathname
 
   // Initialize theme on mount
   useEffect(() => {
     setTheme(isDark)
   }, [isDark, setTheme])
 
-  // Check if we're on the landing page
-  const isLandingPage = location === '/'
-
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <div className="min-h-screen">
-          {!isLandingPage && <Navigation />}
-          <main className={isLandingPage ? '' : 'container mx-auto px-4 py-8'}>
-            <AnimatedRoutes />
-          </main>
-        </div>
+        <AppContent />
       </Router>
     </QueryClientProvider>
+  )
+}
+
+// Separate component to access router hooks
+const AppContent = () => {
+  const location = useLocation()
+  const isLandingPage = location.pathname === '/landing'
+  const isLoginPage = location.pathname === '/login'
+
+  // Hide navigation on landing and login pages
+  const showNavigation = !isLandingPage && !isLoginPage
+
+  return (
+    <div className="min-h-screen">
+      {showNavigation && <Navigation />}
+      <main className={isLandingPage || isLoginPage ? '' : 'container mx-auto px-4 py-8'}>
+        <AnimatedRoutes />
+      </main>
+    </div>
   )
 }
 
