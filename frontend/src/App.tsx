@@ -1,21 +1,34 @@
 import { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 
-// Pages
+// Pages - Public
+import Landing from './pages/Landing'
+import { Login } from './pages/Login'
+
+// Pages - Admin/Overview
 import Dashboard from './pages/Dashboard'
 import StudentProfile from './pages/StudentProfile'
 import Assessment from './pages/Assessment'
 import Forecast from './pages/Forecast'
 import SchoolOverview from './pages/SchoolOverview'
-import Landing from './pages/Landing'
+
+// Pages - Student
+import { StudentDashboard } from './pages/student/StudentDashboard'
+import { WeeklySurvey } from './pages/student/WeeklySurvey'
+import { StudyResources } from './pages/student/StudyResources'
+
+// Pages - Teacher
+import { TeacherDashboard } from './pages/teacher/TeacherDashboard'
 
 // Components
 import Navigation from './components/Navigation'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 // Store
 import { useThemeStore } from './store/themeStore'
+import { useAuthStore } from './store/authStore'
 
 // Styles
 import './styles/globals.css'
@@ -47,16 +60,116 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => {
 // Animated routes
 const AnimatedRoutes = () => {
   const location = useLocation()
+  const { isAuthenticated, user } = useAuthStore()
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
-        <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
-        <Route path="/student/:studentId" element={<PageTransition><StudentProfile /></PageTransition>} />
-        <Route path="/assessment/:studentId" element={<PageTransition><Assessment /></PageTransition>} />
-        <Route path="/forecast/:studentId" element={<PageTransition><Forecast /></PageTransition>} />
-        <Route path="/school-overview" element={<PageTransition><SchoolOverview /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+
+        {/* Student Routes */}
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <PageTransition><StudentDashboard /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/survey"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <PageTransition><WeeklySurvey /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/resources"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <PageTransition><StudyResources /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/history"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <PageTransition><StudentProfile /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/profile"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <PageTransition><StudentProfile /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Teacher Routes */}
+        <Route
+          path="/teacher/dashboard"
+          element={
+            <ProtectedRoute requiredRole="teacher">
+              <PageTransition><TeacherDashboard /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/student/:studentId"
+          element={
+            <ProtectedRoute requiredRole="teacher">
+              <PageTransition><StudentProfile /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin/Overview Routes (legacy - can be accessed by any authenticated user) */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Dashboard /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/:studentId"
+          element={
+            <ProtectedRoute>
+              <PageTransition><StudentProfile /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assessment/:studentId"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Assessment /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/forecast/:studentId"
+          element={
+            <ProtectedRoute>
+              <PageTransition><Forecast /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/school-overview"
+          element={
+            <ProtectedRoute>
+              <PageTransition><SchoolOverview /></PageTransition>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AnimatePresence>
   )
